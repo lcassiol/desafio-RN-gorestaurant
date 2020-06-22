@@ -76,12 +76,20 @@ const FoodDetails: React.FC = () => {
       // Load a specific food with extras based on routeParams id
       const { id } = routeParams;
       const { data } = await api.get<Food>(`foods/${id}`);
+
       setFood({ ...data, formattedPrice: formatValue(data.price) });
       setExtras(
         data.extras.map(extra => {
           return { ...extra, quantity: 0 };
         }),
       );
+
+      try {
+        const favorite = await api.get(`favorites/${id}`);
+        if (favorite) {
+          setIsFavorite(true);
+        }
+      } catch (error) {}
     }
 
     loadFood();
@@ -121,8 +129,14 @@ const FoodDetails: React.FC = () => {
     setFoodQuantity(newFoodQuantity);
   }
 
-  const toggleFavorite = useCallback(() => {
+  const toggleFavorite = useCallback(async () => {
     // Toggle if food is favorite or not
+    if (isFavorite) {
+      await api.delete(`favorites/${food.id}`);
+    } else {
+      await api.post('favorites', food);
+    }
+
     setIsFavorite(state => !state);
   }, [isFavorite, food]);
 
